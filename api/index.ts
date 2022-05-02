@@ -1,36 +1,43 @@
 import axios from "axios";
-
-const instance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BASE_URL,
-  headers: {},
-});
-
-interface IGetRequest {
-  endPoint: string;
-  params?: any;
-  data?: any;
-}
-
-interface IPostRequest {
-  endPoint: string;
-  body: {};
-}
+import { IAxiosRequestConfig, instance } from "./instances";
 
 export const requestMethod = {
-  get: ({ endPoint, params }: IGetRequest) => {
-    return instance.get(endPoint, { ...params });
-  },
-  post: ({ endPoint, body }: IPostRequest) => {
-    return instance.post(endPoint, body, {
-      headers: {
-        "Content-Type": "application/json",
+  get: ({ url, params }: IAxiosRequestConfig) => {
+    return instance.get(url, {
+      params: { ...params },
+      validateStatus: function (status) {
+        // 상태 코드가 400 이상일 경우 거부. 나머지(400보다 작은)는 허용.
+        return status < 400;
       },
     });
   },
-  patch: ({ endPoint, data, params }: IGetRequest) => {
-    return instance.patch(endPoint, data, { ...params });
+  post: ({ url, body }: IAxiosRequestConfig) => {
+    return instance.post(url, body, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      validateStatus: function (status) {
+        // 상태 코드가 500 이상일 경우 거부. 나머지(500보다 작은)는 허용.
+        return status < 400;
+      },
+    });
   },
-  delete: ({ endPoint }: IGetRequest) => {
-    return instance.delete(endPoint);
+  patch: ({ url, data, params }: IAxiosRequestConfig) => {
+    return instance.patch(url, data, { params: { ...params } });
+  },
+  delete: ({ url }: IAxiosRequestConfig) => {
+    return instance.delete(url);
+  },
+  postFile: ({ url, body }: IAxiosRequestConfig) => {
+    return instance.post(url, body, {
+      responseType: "arraybuffer",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      validateStatus: function (status) {
+        // 상태 코드가 500 이상일 경우 거부. 나머지(500보다 작은)는 허용.
+        return status < 400;
+      },
+    });
   },
 };
